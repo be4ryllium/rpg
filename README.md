@@ -4,4 +4,4 @@ funny rpg
 it is cool
 <br>
 use your brain idiot
-<div>safdsdf</div>
+<div style="background-color: white;">safdsdf</div>
