@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>rpg</title>
+
+    <style id="media">
+
+    </style>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap');
+
+        * {
+            font-family: 'Roboto Mono', monospace;
+            user-select: none;
+            -moz-user-select: none;
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            image-rendering: pixelated;
+        }
+
+        #dialogbox {
+            position: fixed;
+            height: 200px;
+            width: 600px;
+            color: white;
+            top: 15px;
+            border: 5px solid white;
+            border-radius: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px;
+            font-size: 25px;
+            background-color: black;
+            white-space: pre-wrap;
+            display: none;
+            z-index: 100;
+            box-shadow: black 0px 5px 10px;
+        }
+
+        body {
+            overflow: hidden;
+            background-image: url('sprites/grassrepeat.png');
+            scroll-behavior: smooth;
+        }
+
+        #background {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #main {
+            opacity: 1;
+            background-image: url('sprites/repeating/dirt/all.png');
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .object {
+
+        }
+
+        #player {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 144px;
+            height: 240px;
+            background-image: url('sprites/creatures/you/forward.png');
+            transition: all linear 16ms;
+            background-size: contain;
+        }
+
+        #topbar {
+            position: absolute;
+            left: 50px;
+            top: 0px;
+            height: 50px;
+            width: calc(100% - 100px);
+            background-image: url('sprites/repeating/dirt/bottomleftright.png');
+        }
+
+        #bottombar {
+            position: absolute;
+            left: 50px;
+            bottom: 0px;
+            height: 50px;
+            width: calc(100% - 100px);
+            background-image: url('sprites/repeating/dirt/topleftright.png');
+        }
+
+        #leftbar {
+            position: absolute;
+            left: 0px;
+            top: 50px;
+            height: calc(100% - 100px);
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/topbottomright.png');
+        }
+
+        #rightbar {
+            position: absolute;
+            right: 0px;
+            top: 50px;
+            height: calc(100% - 100px);
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/topbottomleft.png');
+        }
+
+        #topleft {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 50px;
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/bottomright.png');
+        }
+        #topright {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 50px;
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/bottomleft.png');
+        }
+        #bottomleft {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 50px;
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/topright.png');
+        }
+        #bottomright {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            height: 50px;
+            width: 50px;
+            background-image: url('sprites/repeating/dirt/topleft.png');
+        }
+
+        @media (min-width: 3000px) {
+            #background {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        #fps {
+            color: #FF00FF;
+            position: fixed;
+            top: -50px;
+            left: 10px;
+            font-size: 40px;
+            transition: all ease-in-out 0.5s;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="background">
+        <div id="main"></div>
+
+        <div id="topbar"></div>
+        <div id="bottombar"></div>
+        <div id="leftbar"></div>
+        <div id="rightbar"></div>
+
+        <div id="topleft"></div>
+        <div id="topright"></div>
+        <div id="bottomleft"></div>
+        <div id="bottomright"></div>
+    </div>
+    
+    <div id="dialogbox"></div>
+    <div id="player"></div>
+
+    <p style="position: fixed; right: 15px; bottom: 0;">this game is in beta bruz<br />wasd / arrows to move<br />'r', 'f', ';', 'shift'</p>
+    
+    <div id="fps"></div>
+    <script>
+        import { useState, useEffect } from 'react';
+
+        function dims() {
+            let w = window.innerWidth
+                || document.documentElement.clientWidth
+                || document.body.clientWidth;
+            let h = window.innerHeight
+                || document.documentElement.clientHeight
+                || document.body.clientHeight;
+
+            return [w, h];
+        }
+
+        window.scrollTo(0, 0);
+
+        let dimensions = [3000, 2000];
+
+        let dialogbox = document.getElementById("dialogbox")
+            back = document.getElementById("background")
+            main = document.getElementById("main")
+            player = document.getElementById("player");
+
+        back.style.height = dimensions[1] + "px";
+        back.style.width = dimensions[0] + "px";
+        main.style.height = dimensions[1] - 100 + "px";
+        main.style.width = dimensions[0] - 100 + "px";
+
+        var msgid = -1
+            msgenabled = false
+            msgrunning = false
+            msgskipping = false
+            msgskipped = false;
+
+        var w = false
+            a = false
+            s = false
+            d = false;
+
+        let scrollmode = typeof InstallTrigger !== 'undefined' ? 'smooth' : 'auto';
+
+        var posx = 0
+            posy = 0;
+
+        let plrdims = [104, 240];
+        player.style.width = plrdims[0] + "px";
+        player.style.height = plrdims[1] + "px";
+
+        function message(text, time, sound) {
+            msgenabled = true;
+            msgrunning = true;
+            msgskipped = false;
+            msgskipping = false;
+            dialogbox.style.display = "block";
+            msgid++;
+            let curid = msgid;
+            var wait = 0;
+            if (time === undefined)
+                time = 40;
+            //if (sound === undefined)
+            //    sound = 'sounds/u.mp3';
+            dialogbox.innerHTML = "";
+            for (let i in text) {
+                setTimeout(function () {
+                    if (msgskipped || msgid !== curid)
+                        return;
+                    //if (text[i] !== " ")
+                    //    (new Audio(sound)).play();
+                    dialogbox.innerHTML += text[i];
+                    if (i == text.length - 1) {
+                        msgrunning = false;
+                        msgskipping = false;
+                    } else if (msgskipping) {
+                        msgrunning = false;
+                        msgskipped = true;
+                        dialogbox.innerHTML += text.substring(parseInt(i) + 1, text.length);
+                    }
+                }, wait);
+                wait += time;
+            }
+        }
+
+        window.onkeydown = function (e) {
+            //console.log(e.key);
+            let key = e.key.toLowerCase();
+
+            if (key === 'r') message(" * But nobody asked.");
+            if (key === 'f') new Audio('sounds/AchievementUnlockedSong.mp3').play();
+            if (key === 'enter') {
+                if (msgrunning) {
+                    msgskipping = true;
+                } else if (msgenabled) {
+                    msgenabled = false;
+                    dialogbox.style.display = "none";
+                }
+            }
+            if (key === "w" || key === "arrowup") w = true;
+            if (key === "a" || key === "arrowleft") a = true;
+            if (key === "s" || key === "arrowdown") s = true;
+            if (key === "d" || key === "arrowright") d = true;
+            if (key === ";") debug();
+            if (key === "shift") speedmult = 1.5;
+        }
+
+        window.onkeyup = function (e) {
+            let key = e.key.toLowerCase();
+
+            if (key === "w" || key === "arrowup") w = false;
+            if (key === "a" || key === "arrowleft") a = false;
+            if (key === "s" || key === "arrowdown") s = false;
+            if (key === "d" || key === "arrowright") d = false;
+            if (key === "shift") speedmult = 1;
+        }
+
+        var debugging = false;
+        function debug() {
+            debugging = !debugging;
+            if (debugging) {
+                new Audio('sounds/narration(5).mp3').play();
+                document.getElementById("fps").style.top = "0";
+            } else {
+                document.getElementById("fps").style.top = "-50px";
+            }
+        }
+
+        var fps = 60;
+        var movespeed = 500 / fps;
+        var oldperformance = performance.now();
+        var speedmult = 1;
+
+        var step = false;
+
+        function otherthings() {
+            step = !step;
+            setTimeout(otherthings, 333 / speedmult);
+        }
+        otherthings();
+
+        function updatefpscounter() {
+            document.getElementById("fps").innerHTML = fps;
+            setTimeout(updatefpscounter, 1000);
+        }
+        updatefpscounter();
+
+        var dir = 'forward';
+
+        function frame() {
+            requestAnimationFrame(frame);
+
+            let perf = performance.now();
+            fps = 1000 / (perf - oldperformance) | 0;
+            oldperformance = perf;
+
+            movespeed = 500 / fps * speedmult;
+
+            var moving = false
+                keycount = 0;
+
+            var ww = w
+                aa = a
+                ss = s
+                dd = d;
+
+            if (w && s) { ww = false; ss = false; }
+            if (a && d) { aa = false; dd = false; }
+
+            if (ww && !msgenabled) {
+                posy - movespeed < 0 ? posy = 0 : posy -= movespeed;
+                moving = true;
+                keycount++;
+            }
+            if (aa && !msgenabled) {
+                posx - movespeed < 0 ? posx = 0 : posx -= movespeed;
+                moving = true;
+                keycount++;
+            }
+            if (ss && !msgenabled) {
+                posy + movespeed > dimensions[1] - plrdims[1] ? posy = dimensions[1] - plrdims[1] : posy += movespeed;
+                moving = true;
+                keycount++;
+            }
+            if (dd && !msgenabled) {
+                posx + movespeed > dimensions[0] - plrdims[0] ? posx = dimensions[0] - plrdims[0] : posx += movespeed;
+                moving = true;
+                keycount++;
+            }
+
+            if (keycount === 1) {
+                dir = ww ? 'forward' : aa ? 'left' : ss ? 'backward' : 'right';
+            } else if (keycount === 2) {
+                (dir === 'forward' && !ww) || (dir === 'left' && !aa) || (dir === 'backward' && !ss) || (dir === 'right' && !dd) ? dir = ww ? 'forward' : aa ? 'left' : ss ? 'backward' : 'right' : false;
+            }
+
+            if (moving) {
+                window.scrollTo({ top: posy - dims()[1] / 2 + plrdims[1] / 2, left: posx - dims()[0] / 2 + plrdims[0] / 2, behavior: scrollmode });
+                step ? player.style.backgroundImage = `url('sprites/creatures/you/${dir}step1.png')` : player.style.backgroundImage = `url('sprites/creatures/you/${dir}step0.png')`;
+            } else {
+                player.style.backgroundImage = `url('sprites/creatures/you/${dir}.png')`;
+            }
+
+            player.style.top = posy + "px";
+            player.style.left = posx + "px";
+        }
+        frame();
+
+        useEffect(() => {
+            setLoading(true)
+            fetch('/api/profile-data')
+                .then((res) => res.json())
+                .then((data) => {
+                    setData(data)
+                    setLoading(false)
+                })
+        }, [])
+
+        '[{"voiceId":"Microsoft French (Paul)","ssml":"<speak version=\"1.0\" xml:lang=\"fr-FR\">message</speak>"}]'
+    </script>
+</body>
+</html>
