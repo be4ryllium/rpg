@@ -378,8 +378,9 @@
                 (dir === 'forward' && !ww) || (dir === 'left' && !aa) || (dir === 'backward' && !ss) || (dir === 'right' && !dd) ? dir = ww ? 'forward' : aa ? 'left' : ss ? 'backward' : 'right' : false;
             }
 
+            window.scrollTo({ top: posy - dims()[1] / 2 + plrdims[1] / 2, left: posx - dims()[0] / 2 + plrdims[0] / 2, behavior: scrollmode });
+            
             if (moving) {
-                window.scrollTo({ top: posy - dims()[1] / 2 + plrdims[1] / 2, left: posx - dims()[0] / 2 + plrdims[0] / 2, behavior: scrollmode });
                 step ? player.style.backgroundImage = `url('sprites/creatures/you/${dir}step1.png')` : player.style.backgroundImage = `url('sprites/creatures/you/${dir}step0.png')`;
             } else {
                 player.style.backgroundImage = `url('sprites/creatures/you/${dir}.png')`;
@@ -389,16 +390,6 @@
             player.style.left = posx + "px";
         }
         frame();
-
-        useEffect(() => {
-            setLoading(true)
-            fetch('/api/profile-data')
-                .then((res) => res.json())
-                .then((data) => {
-                    setData(data)
-                    setLoading(false)
-                })
-        }, [])
 
         //'[{"voiceId":"Microsoft French (Paul)","ssml":"<speak version=\"1.0\" xml:lang=\"fr-FR\">message</speak>"}]'
     </script>
